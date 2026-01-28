@@ -1,30 +1,31 @@
-# Setting up a LAMP development envinorment with Docker
+# Skapa en lokal utvecklings miljö med Docker & LAMP
 
-We are going to set up a local development envinorment using the legendary LAMP stack. LAMP stands for Linux, Apache, MySql and PHP and will allow us to write all kinds of web applications.
+I denna guiden skapar vi en lokal utvecklingsmiljö av LAMP stacken. Genom att använda docker kommer vi skapa en flexibel miljö som går att använda som en template för att skapa en databasdriven applikation med PHP lokalt.
 
-#### Why using a development environment with docker?
+#### Varför använda docker?
 
-By using Docker we can run a image of the full envinorment needed to run our application. This mean even the operating system is included and therefor we can run it on device regarding our own os. The docker image allows for version specification on all dependencies which is a huge benefit when switching machine.
+Genom användningen av docker kan vi köra samma miljö oavsett vilket operativsystem vi annars använder. Docker installerar alla nödvändiga beroenden och kör dem i en isolerad miljö kallad container. Vi får exakt samma miljö oavsett vad vi tidigare har installerat på datorn. Detta motverkar problem relaterat till övriga program som kan finnas installerade på vår maskin.
 
-
-
-###### Step 1
+###### Steg 1
 
 Create a folder structure like below this will hold our application.
+Skapa en filstruktur enlig nedan.
 
+```txt
 lamp-docker
-    ├── docker
+    ├── docker`
+    |   |__ mysql
+    |   |  |__ init.sql
     │   └── php-apache
     │       └── Dockerfile
     ├── docker-compose.yml
     └── src
         └── index.php
+```
 
+###### Steg 2
 
-
-###### Step 2
-
-In docker/php-apache/Dockerfile add the following.
+Lägg till följande i: /php-apache/Dockerfile
 
 ```docker
 FROM php:8.2-apache
@@ -42,99 +43,31 @@ RUN docker-php-ext-install mysqli pdo pdo_mysql
 WORKDIR /var/www/html
 ```
 
+###### Steg 3
 
+För att bekräfta att databasen skapar vi med hjälp av init.sql en tabell 'messages' och lägger till tre meddelanden.
 
-###### Step 3
+Lägg till följande i: ./docker/mysql/init.sql
 
-In docker-compose.yml add the following.
+```sql
+USE app;
 
-```yml
-version: "3.9"
-
-services:
- web:
- build: ./docker/php-apache
- container_name: lamp_web
- ports:
- - "8080:80"
- volumes:
- - ./src:/var/www/html
- depends_on:
- - db
-
-db:
- image: mysql:8.0
- container_name: lamp_db
- environment:
- MYSQL_ROOT_PASSWORD: root
- MYSQL_DATABASE: app
- MYSQL_USER: appuser
- MYSQL_PASSWORD: secret
- volumes:
- - db_data:/var/lib/mysql
- ports:
- - "3306:3306"
-
-volumes: 
-db_data:
-```
-
-
-
-###### Step 4
-
-Add the following to src/index.php
-
-```php
-<?php
-
-phpinfo();
-
-?>
-```
-
-
-
-###### Step 5
-
-From root in project folder build and run docker container.
-
-```bash
-$ docker compose up --build
-```
-
-If run succesfully you can now visit http://localhost:8080 and you should see the PHP info page.
-
-##### Step 6
-
-To confirm everygthing is up and running we will manually enter some data to the database. In the terminal run the following command
-
-```
-$ docker exec -t lamp_db mysql -uappuser -p
-
-Password: secret
-
-mysql> USE app;
-
-mysql> CREATE TABLE messages (
-
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    content VARCHAR(255) NOT NULL
-
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  content VARCHAR(255) NOT NULL
 );
 
-mysql> INSERT INTO messages (content) VALUES
-('Hello from MySQL!'),
-('Docker LAMP works'),
-('PHP can read this');
-
-mysql> EXIT;
+INSERT INTO messages (content) VALUES
+  ('Hello from MySQL'),
+  ('Docker LAMP works'),
+  ('PHP can read this');
 ```
 
-###### Step 7
+###### Steg 4
 
-Now we have created a table in the database and entered some data let further explore how we can connect our database to our PHP application. In src/index.php enter.
+Vi skapar kontakt med databasen via PHP och hämtar data ifrån databasen som slutligen visas upp i html.
+
+Lägg till följande i ./src/index.php
 
 ```php
 <?php
@@ -175,10 +108,46 @@ try {
 
 ```
 
-Visit http://localhost:8080 again and yous should now see the messages from the MySQL database.
+###### Steg 5
 
-###### Summary
+För att bygga vår container och köra den använder vi ett docker-compose script.
 
-We now have a starting template for building all kinds of web applications with PHP and MySQL and now matter where we working we can spin up our dev envinorment fast. Feel free to download the code as a starter template or follow this guide to create your own starting ground.
+Lägg till följande i: ./docker-compose.yml
 
-* Note this app should not be run for production and also hide your passwords for this demonstration sensetive data is displayed.
+```yml
+services:
+  web:
+    build: ./docker/php-apache
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: secret
+    volumes:
+      - db_data:/var/lib/mysqli
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+
+volumes:
+  db_data:
+```
+
+###### Steg 6
+
+I root kör vi sedan docker-compose scriptet med hjälp av följande kommando.
+
+```bash
+docker compose up --build
+```
+
+Besök http://localhost:8080 om allt fungerade ska en hemsida med meddelanden från databasen visas upp. Om det av någon anledning inte fungera testa att stänga ner docker containers genom: 'docker-compose-down' och kör om: 'docker compose up --build' innan vidare felsökning.
