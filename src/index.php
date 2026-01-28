@@ -22,7 +22,7 @@ try {
     <title>LAMP Docker App</title>
   </head>
 <body>
-  <h1>Messages from the database</h1>
+  <h1>Medellanden från databasen</h1>
 
   <ul>
     <?php foreach ($messages as $message): ?>
