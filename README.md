@@ -8,8 +8,7 @@ Genom användningen av docker kan vi köra samma miljö oavsett vilket operativs
 
 ###### Steg 1
 
-Create a folder structure like below this will hold our application.
-Skapa en filstruktur enlig nedan.
+Skapa en filstruktur enlig nedan
 
 ```txt
 lamp-docker
@@ -20,6 +19,9 @@ lamp-docker
     │       └── Dockerfile
     ├── docker-compose.yml
     └── src
+        |-- db
+        |   |__ config.php
+        |   |-- connect.php
         └── index.php
 ```
 
@@ -65,27 +67,54 @@ INSERT INTO messages (content) VALUES
 
 ###### Steg 4
 
-Vi skapar kontakt med databasen via PHP och hämtar data ifrån databasen som slutligen visas upp i html.
+Vi skapar kontakt med databasen via PHP och hämtar data ifrån databasen vi lägger till variabler för att ansluta mot databasen i en egen fil. Glöm inte att lägga till filen i gitignore ifall projektet publiceras till Github.
+
+Lägg till följande i ./src/db/config.php
+```php
+<?php
+$dsn = "mysql:host=db;dbname=app;charset=utf8mb4";
+$user = "appuser";
+$pass = "secret";
+?>
+```
+
+För att ansluta till databasen skapar vi en funktion.
+
+Lägg till följande i ./src/db/connect.php
+```php
+<?php
+require "config.php";
+
+function connectDb() {
+  global $dsn, $user, $pass;
+function connectDb() {
+    global $dsn, $user, $pass;
+    try {
+        $pdo = new PDO($dsn, $user, $pass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        return $pdo;
+    } catch (PDOException $e) {
+        die("Database connection failed: " . $e->getMessage());
+    }
+}
+?>
+```
+
+Vi använder funktionen i vår index fil och hämtar meddelanden från databasen och visar sedan upp dessa i html dokumentet.
 
 Lägg till följande i ./src/index.php
 
 ```php
 <?php
 
-$dsn = "mysql:host=db;dbname=app;charset=utf8mb4";
-$user = "appuser";
-$pass = "secret";
+include "./db/connect.php";
 
-try {
-    $pdo = new PDO($dsn, $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$pdo = connectDb();
 
-    $stmt = $pdo->query("SELECT * FROM messages");
-    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $pdo->query("SELECT * FROM messages");
+$messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-} catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
+
 ?>
 
 <!DOCTYPE html>

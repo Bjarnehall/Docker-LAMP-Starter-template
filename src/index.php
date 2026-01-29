@@ -1,19 +1,13 @@
 <?php
 
-$dsn = "mysql:host=db;dbname=app;charset=utf8mb4";
-$user = "appuser";
-$pass = "secret";
+include "./db/connect.php";
 
-try {
-  $pdo = new PDO($dsn, $user, $pass);
-  $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$pdo = connectDb();
 
-  $stmt = $pdo->query("SELECT * FROM messages");
-  $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $pdo->query("SELECT * FROM messages");
+$messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-} catch (PDOException $e) {
-  die("Database connection failed: " . $e->getMessage());
-}
+
 ?>
 
 <!DOCTYPE html>
