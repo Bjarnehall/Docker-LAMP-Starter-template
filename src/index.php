@@ -1,13 +1,6 @@
 <?php
-
-include "./db/connect.php";
-
-$pdo = connectDb();
-
-$stmt = $pdo->query("SELECT * FROM messages");
-$messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
+include "./functions/messages.php";
+$messages = getMessages();
 ?>
 
 <!DOCTYPE html>

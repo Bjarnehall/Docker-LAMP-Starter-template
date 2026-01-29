@@ -21,7 +21,9 @@ lamp-docker
     └── src
         |-- db
         |   |__ config.php
-        |   |-- connect.php
+        |   |__ connect.php
+        |-- functions
+        |   |__ messages.php
         └── index.php
 ```
 
@@ -102,19 +104,29 @@ function connectDb() {
 
 Vi använder funktionen i vår index fil och hämtar meddelanden från databasen och visar sedan upp dessa i html dokumentet.
 
+Vi använder connectDb för att ansluta till databasen och vi skapar en funktion för att hämta medelanden från databasen.
+
+Lägg till följande i ./src/functions/messages.php
+```php
+<?php
+include "./db/connect.php";
+
+function getMessages() {
+    $pdo = connectDb();
+    $stmt = $pdo->query("SELECT * FROM messages");
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+?>
+```
+
+Vi visar upp data ifrån databasen genom att använda funktionen. Vi importerar funktionen i vår index fil och definerar variablen '$messages' som vi visar upp i vårt html dokument.
+
 Lägg till följande i ./src/index.php
 
 ```php
 <?php
-
-include "./db/connect.php";
-
-$pdo = connectDb();
-
-$stmt = $pdo->query("SELECT * FROM messages");
-$messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-
+include "./src/messages.php";
+$messages = getMessages();
 ?>
 
 <!DOCTYPE html>
@@ -180,3 +192,7 @@ docker compose up --build
 ```
 
 Besök http://localhost:8080 om allt fungerade ska en hemsida med meddelanden från databasen visas upp. Om det av någon anledning inte fungera testa att stänga ner docker containers genom: 'docker-compose-down' och kör om: 'docker compose up --build' innan vidare felsökning.
+
+#### Sammanfattning
+
+Vi har nu byggt en PHP applikation som ansluter och hämtar data ifrån en MySQL databas. Genom att skapa en docker container och ett compose script kan vi nu enkelt ladda ner och köra applikationen lokalt. Perfekt template att bygga vidare ifrån.
