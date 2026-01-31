@@ -1,9 +1,12 @@
 <?php
-include "./db/connect.php";
+include __DIR__ . "/../db/connect.php";
 
-function getMessages() {
+
+
+function getBlogpostById($id) {
     $pdo = connectDb();
-    $stmt = $pdo->query("SELECT * FROM messages");
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare("SELECT * FROM blogpost WHERE id = ?");
+    $stmt->execute([$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 ?>
